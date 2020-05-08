@@ -35,6 +35,8 @@ import software.amazon.awssdk.services.ec2.model.Instance;
 import software.amazon.awssdk.services.ec2.model.Ec2Exception;
 
 import java.util.List;
+
+
 // snippet-end:[ec2.java2.running_instances.import]
 
 /**
