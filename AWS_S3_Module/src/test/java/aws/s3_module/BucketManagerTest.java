@@ -5,10 +5,13 @@ import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.*;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InOrder;
 import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.VerificationCollector;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
@@ -28,11 +31,15 @@ import static org.powermock.api.support.membermodification.MemberModifier.stub;
 @PrepareForTest({ AmazonS3ClientBuilder.class})
 @PowerMockIgnore("javax.management.*")
 public class BucketManagerTest {
+    @Rule
+    public VerificationCollector verificationCollector = MockitoJUnit.collector();
 
     String existentBucketName = "dummy-test-bucket-1";
     String nonExistentBucketName = "dummy-test-bucket-2";
 
     @Mock AmazonS3Client s3;
+
+    @Mock ObjectListing ol;
 
     @Before
     public void prepare() {
@@ -45,7 +52,7 @@ public class BucketManagerTest {
         objSummList.add(objSumm1);
         objSummList.add(objSumm2);
 
-        ObjectListing ol = mock(ObjectListing.class);
+        ol = mock(ObjectListing.class);
         when(ol.getObjectSummaries()).thenReturn(objSummList);
 
         // a list of things to do before I die
@@ -82,7 +89,40 @@ public class BucketManagerTest {
         bucketManager.deleteBucket(existentBucketName);
 
         verify(s3, times(1)).listObjects(existentBucketName);
-        assertTrue(true);
+    }
+
+    @Test
+    public void DeleteBucketWithVersionSummariesTest() {
+
+        VersionListing vl = mock(VersionListing.class);
+        List<S3VersionSummary> versionSummaryList = new ArrayList<>();
+        S3VersionSummary vs1 = new S3VersionSummary();
+        vs1.setBucketName(existentBucketName);
+        vs1.setKey("testkey1");
+        vs1.setVersionId("version1");
+        versionSummaryList.add(vs1);
+        when(vl.getVersionSummaries()).thenReturn(versionSummaryList);
+        when(vl.isTruncated()).thenReturn(true).thenReturn(false);
+        when(s3.listVersions(any(ListVersionsRequest.class))).thenReturn(vl);
+        when(s3.listNextBatchOfVersions(vl)).thenReturn(vl);
+
+        BucketManager bucketManager = new BucketManager();
+        bucketManager.deleteBucket(existentBucketName);
+
+        verify(s3, times(1)).listObjects(existentBucketName);
+        verify(vl, times(2)).isTruncated();
+    }
+
+    @Test
+    public void DeleteBucketWithPagingTest() {
+
+        when(ol.isTruncated()).thenReturn(true).thenReturn(false);
+        when(s3.listNextBatchOfObjects(ol)).thenReturn(ol);
+        BucketManager bucketManager = new BucketManager();
+        bucketManager.deleteBucket(existentBucketName);
+
+        verify(s3, times(1)).listObjects(existentBucketName);
+        verify(ol, times(2)).isTruncated();
     }
 
     @Test(expected = AmazonS3Exception.class)
@@ -124,5 +164,14 @@ public class BucketManagerTest {
         BucketManager bucketManager = new BucketManager();
         Bucket bucket = bucketManager.getBucket(nonExistentBucketName);
         assertTrue(bucket == null);
+    }
+
+    @Test
+    public void GetCreateBucketFailureTest() {
+        when(s3.createBucket(anyString())).thenThrow(new AmazonS3Exception("S3 Exception thrown by mock"));
+
+        BucketManager bucketManager = new BucketManager();
+        bucketManager.createBucket(nonExistentBucketName);
+        assertTrue(true);
     }
 }
