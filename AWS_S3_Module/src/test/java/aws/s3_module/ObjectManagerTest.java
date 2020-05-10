@@ -75,7 +75,7 @@ public class ObjectManagerTest {
         try {
             s3Object.setObjectContent(new StringInputStream(testString));
         } catch(java.io.UnsupportedEncodingException e) {
-            assertTrue(false);
+            fail();
             return;
         }
         when(s3.getObject(existentTestBucket, existentTestKey)).thenReturn(s3Object);
@@ -117,7 +117,7 @@ public class ObjectManagerTest {
         ObjectManager objectManager = new ObjectManager();
         objectManager.putObject(nonexistentTestBucket, existentLocalFile);
 
-        assertTrue(false);
+        fail();
     }
 
     @Test (expected = AmazonServiceException.class)
@@ -125,7 +125,7 @@ public class ObjectManagerTest {
         ObjectManager objectManager = new ObjectManager();
         objectManager.putObject(existentTestBucket, nonexistentLocalFile);
 
-        assertFalse(true);
+        fail();
     }
 
     @Test
@@ -141,7 +141,7 @@ public class ObjectManagerTest {
         ObjectManager objectManager = new ObjectManager();
         List<String>  lst = objectManager.listObjects(nonexistentTestBucket);
 
-        assertFalse(true);
+        fail();
     }
 
     @Test
@@ -151,7 +151,7 @@ public class ObjectManagerTest {
             objectManager.downloadObject(existentTestBucket, existentTestKey);
         } catch (IOException e) {
             // shouldn't get this exception
-            assertTrue(false);
+            fail();
         }
 
         File file = new File(existentTestKey);
@@ -162,7 +162,7 @@ public class ObjectManagerTest {
             s = br.readLine();
         } catch (Exception e) {
             // shouldn't get this exception
-            assertTrue(false);
+            fail();
         }
 
         assertEquals(testString, s);
@@ -175,7 +175,7 @@ public class ObjectManagerTest {
             objectManager.downloadObject(nonexistentTestBucket, existentTestKey);
         } catch (IOException e) {
             // shouldn't get this exception
-            assertTrue(false);
+            fail();
         }
     }
 
@@ -186,7 +186,7 @@ public class ObjectManagerTest {
             objectManager.downloadObject(existentTestBucket, nonexistentTestKey);
         } catch (IOException e) {
             // shouldn't get this exception
-            assertTrue(false);
+            fail();
         }
     }
 
@@ -203,7 +203,7 @@ public class ObjectManagerTest {
         ObjectManager objectManager = new ObjectManager();
         objectManager.copyObject(nonexistentTestBucket, existentTestKey, existentTestBucket2);
 
-        assertTrue(false);
+        fail();
     }
 
     @Test (expected = AmazonServiceException.class)
@@ -211,7 +211,7 @@ public class ObjectManagerTest {
         ObjectManager objectManager = new ObjectManager();
         objectManager.copyObject(existentTestBucket, nonexistentTestKey, existentTestBucket2);
 
-        assertTrue(false);
+        fail();
     }
 
     @Test (expected = AmazonServiceException.class)
@@ -219,7 +219,8 @@ public class ObjectManagerTest {
         ObjectManager objectManager = new ObjectManager();
         objectManager.copyObject(existentTestBucket, existentTestKey, nonexistentTestBucket);
 
-        assertTrue(false);
+        fail();
     }
+    
 
 }
